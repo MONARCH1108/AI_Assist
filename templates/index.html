@@ -1,0 +1,558 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Research Assistant</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: #f8f9fa;
+        }
+        #chat-container {
+            height: 500px;
+            overflow-y: auto;
+            border: 1px solid #dee2e6;
+            border-radius: 5px;
+            background-color: white;
+            padding: 15px;
+        }
+        .user-message {
+            background-color: #e9ecef;
+            padding: 10px 15px;
+            border-radius: 15px;
+            margin-bottom: 10px;
+            max-width: 80%;
+            align-self: flex-end;
+            margin-left: auto;
+        }
+        .assistant-message {
+            background-color: #d1e7dd;
+            padding: 10px 15px;
+            border-radius: 15px;
+            margin-bottom: 10px;
+            max-width: 80%;
+        }
+        #user-input {
+            resize: none;
+        }
+        .tab-content {
+            border: 1px solid #dee2e6;
+            border-top: none;
+            padding: 15px;
+            background-color: white;
+        }
+        .card {
+            margin-bottom: 15px;
+        }
+        .source-badge {
+            font-size: 0.8em;
+            margin-right: 5px;
+        }
+        .topic-badge {
+            margin-right: 5px;
+            margin-bottom: 5px;
+            cursor: pointer;
+        }
+        #profile-topics {
+            margin-bottom: 15px;
+        }
+        .loading {
+            text-align: center;
+            padding: 20px;
+        }
+        pre {
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+        code {
+            background-color: #f8f9fa;
+            padding: 2px 4px;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container mt-4">
+        <h1 class="text-center mb-4">
+            <i class="fas fa-book-reader me-2"></i>
+            Research Assistant
+        </h1>
+        
+        <div class="row">
+            <div class="col-md-8">
+                <!-- Chat Interface -->
+                <div class="card shadow-sm">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <span><i class="fas fa-comments me-2"></i>Research Chat</span>
+                        <button id="clear-chat" class="btn btn-sm btn-outline-secondary">
+                            <i class="fas fa-eraser me-1"></i>Clear Chat
+                        </button>
+                    </div>
+                    <div class="card-body">
+                        <div id="chat-container" class="d-flex flex-column mb-3"></div>
+                        
+                        <div class="input-group">
+                            <textarea id="user-input" class="form-control" placeholder="Ask a research question..." rows="2"></textarea>
+                            <button id="send-button" class="btn btn-primary">
+                                <i class="fas fa-paper-plane me-1"></i>Send
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-4">
+                <!-- Tools and Resources -->
+                <div class="card shadow-sm">
+                    <div class="card-header">
+                        <ul class="nav nav-tabs card-header-tabs" id="myTab" role="tablist">
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link active" id="tools-tab" data-bs-toggle="tab" data-bs-target="#tools" type="button" role="tab" aria-controls="tools" aria-selected="true">
+                                    <i class="fas fa-tools me-1"></i>Tools
+                                </button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="profile-tab" data-bs-toggle="tab" data-bs-target="#profile" type="button" role="tab" aria-controls="profile" aria-selected="false">
+                                    <i class="fas fa-user me-1"></i>Profile
+                                </button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="notes-tab" data-bs-toggle="tab" data-bs-target="#notes" type="button" role="tab" aria-controls="notes" aria-selected="false">
+                                    <i class="fas fa-sticky-note me-1"></i>Notes
+                                </button>
+                            </li>
+                        </ul>
+                    </div>
+                    
+                    <div class="tab-content" id="myTabContent">
+                        <!-- Tools Tab -->
+                        <div class="tab-pane fade show active" id="tools" role="tabpanel" aria-labelledby="tools-tab">
+                            <h5>Upload Document</h5>
+                            <form id="pdf-form" class="mb-3">
+                                <div class="input-group mb-2">
+                                    <input type="file" class="form-control form-control-sm" id="pdf-file" name="pdf_file" accept=".pdf">
+                                    <button type="submit" class="btn btn-sm btn-primary">Upload</button>
+                                </div>
+                            </form>
+                            
+                            <h5>Load Web Content</h5>
+                            <form id="wiki-form" class="mb-3">
+                                <div class="input-group mb-2">
+                                    <input type="url" class="form-control form-control-sm" id="wiki-url" name="wiki_url" placeholder="Enter URL">
+                                    <button type="submit" class="btn btn-sm btn-primary">Load</button>
+                                </div>
+                            </form>
+                            
+                            <h5>Summarize Article</h5>
+                            <form id="summarize-form">
+                                <div class="input-group mb-2">
+                                    <input type="url" class="form-control form-control-sm" id="article-url" name="article_url" placeholder="Enter article URL">
+                                    <button type="submit" class="btn btn-sm btn-primary">Summarize</button>
+                                </div>
+                            </form>
+                        </div>
+                        
+                        <!-- Profile Tab -->
+                        <div class="tab-pane fade" id="profile" role="tabpanel" aria-labelledby="profile-tab">
+                            <h5>Research Topics</h5>
+                            <div id="profile-topics"></div>
+                            
+                            <h5>Preferences</h5>
+                            <form id="preferences-form">
+                                <div class="mb-3">
+                                    <label for="citation-style" class="form-label">Citation Style</label>
+                                    <select class="form-select form-select-sm" id="citation-style">
+                                        <option value="APA">APA</option>
+                                        <option value="MLA">MLA</option>
+                                        <option value="Chicago">Chicago</option>
+                                        <option value="Harvard">Harvard</option>
+                                    </select>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Preferred Sources</label>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" value="arxiv" id="source-arxiv">
+                                        <label class="form-check-label" for="source-arxiv">arXiv</label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" value="wikipedia" id="source-wikipedia">
+                                        <label class="form-check-label" for="source-wikipedia">Wikipedia</label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" value="academic" id="source-academic">
+                                        <label class="form-check-label" for="source-academic">Academic Journals</label>
+                                    </div>
+                                </div>
+                                <button type="submit" class="btn btn-sm btn-primary">Save Preferences</button>
+                            </form>
+                        </div>
+                        
+                        <!-- Notes Tab -->
+                        <div class="tab-pane fade" id="notes" role="tabpanel" aria-labelledby="notes-tab">
+                            <h5>Research Notes</h5>
+                            <button id="organize-notes" class="btn btn-sm btn-outline-primary mb-3">
+                                <i class="fas fa-file-alt me-1"></i>Generate Research Notes
+                            </button>
+                            <div id="notes-container" class="small">
+                                <p class="text-muted">Click on a topic in your profile or generate notes to view your research collection.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- JavaScript -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const chatContainer = document.getElementById('chat-container');
+            const userInput = document.getElementById('user-input');
+            const sendButton = document.getElementById('send-button');
+            const clearButton = document.getElementById('clear-chat');
+            const pdfForm = document.getElementById('pdf-form');
+            const wikiForm = document.getElementById('wiki-form');
+            const summarizeForm = document.getElementById('summarize-form');
+            const preferencesForm = document.getElementById('preferences-form');
+            const organizeNotesButton = document.getElementById('organize-notes');
+            
+            // Add initial greeting
+            addAssistantMessage("Hi! I'm your Research Assistant. I can help you find, organize, and summarize research. What would you like to research today?");
+            
+            // Load user profile
+            loadUserProfile();
+            
+            // Event Listeners
+            sendButton.addEventListener('click', sendMessage);
+            userInput.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    sendMessage();
+                }
+            });
+            
+            clearButton.addEventListener('click', clearChat);
+            pdfForm.addEventListener('submit', handlePDFUpload);
+            wikiForm.addEventListener('submit', handleWikiURL);
+            summarizeForm.addEventListener('submit', handleSummarize);
+            preferencesForm.addEventListener('submit', savePreferences);
+            organizeNotesButton.addEventListener('click', generateResearchNotes);
+            
+            // Functions
+            function sendMessage() {
+                const query = userInput.value.trim();
+                if (query === '') return;
+                
+                addUserMessage(query);
+                userInput.value = '';
+                
+                // Show loading indicator
+                const loadingId = showLoading();
+                
+                // Send to backend
+                fetch('/ask', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                    },
+                    body: new URLSearchParams({
+                        'query': query
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    // Remove loading indicator
+                    hideLoading(loadingId);
+                    
+                    if (data.error) {
+                        addAssistantMessage(`Error: ${data.error}`);
+                    } else {
+                        addAssistantMessage(data.answer);
+                        // Refresh user profile after each interaction
+                        loadUserProfile();
+                    }
+                })
+                .catch(error => {
+                    hideLoading(loadingId);
+                    addAssistantMessage(`An error occurred: ${error}`);
+                });
+            }
+            
+            function addUserMessage(message) {
+                const messageElement = document.createElement('div');
+                messageElement.classList.add('user-message');
+                messageElement.textContent = message;
+                chatContainer.appendChild(messageElement);
+                chatContainer.scrollTop = chatContainer.scrollHeight;
+            }
+            
+            function addAssistantMessage(message) {
+                const messageElement = document.createElement('div');
+                messageElement.classList.add('assistant-message');
+                messageElement.innerHTML = marked.parse(message);
+                chatContainer.appendChild(messageElement);
+                chatContainer.scrollTop = chatContainer.scrollHeight;
+            }
+            
+            function showLoading() {
+                const loadingId = 'loading-' + Date.now();
+                const loadingElement = document.createElement('div');
+                loadingElement.id = loadingId;
+                loadingElement.classList.add('loading');
+                loadingElement.innerHTML = '<div class="spinner-border text-primary" role="status"><span class="visually-hidden">Loading...</span></div>';
+                chatContainer.appendChild(loadingElement);
+                chatContainer.scrollTop = chatContainer.scrollHeight;
+                return loadingId;
+            }
+            
+            function hideLoading(loadingId) {
+                const loadingElement = document.getElementById(loadingId);
+                if (loadingElement) {
+                    loadingElement.remove();
+                }
+            }
+            
+            function clearChat(e) {
+                e.preventDefault();
+                
+                fetch('/clear', {
+                    method: 'POST',
+                })
+                .then(response => response.json())
+                .then(data => {
+                    chatContainer.innerHTML = '';
+                    addAssistantMessage("Chat cleared. I still remember your research topics and preferences!");
+                })
+                .catch(error => {
+                    addAssistantMessage(`An error occurred: ${error}`);
+                });
+            }
+            
+            function handlePDFUpload(e) {
+                e.preventDefault();
+                const fileInput = document.getElementById('pdf-file');
+                const file = fileInput.files[0];
+                
+                if (!file) {
+                    addAssistantMessage("Please select a PDF file to upload.");
+                    return;
+                }
+                
+                const formData = new FormData();
+                formData.append('pdf_file', file);
+                
+                const loadingId = showLoading();
+                
+                fetch('/process_pdf', {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => response.json())
+                .then(data => {
+                    hideLoading(loadingId);
+                    if (data.error) {
+                        addAssistantMessage(`Error: ${data.error}`);
+                    } else {
+                        addAssistantMessage(`PDF processed successfully: ${file.name}. You can now ask questions about its content.`);
+                    }
+                })
+                .catch(error => {
+                    hideLoading(loadingId);
+                    addAssistantMessage(`An error occurred: ${error}`);
+                });
+            }
+            
+            function handleWikiURL(e) {
+                e.preventDefault();
+                const url = document.getElementById('wiki-url').value.trim();
+                
+                if (!url) {
+                    addAssistantMessage("Please enter a URL.");
+                    return;
+                }
+                
+                const loadingId = showLoading();
+                
+                fetch('/process_wiki', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                    },
+                    body: new URLSearchParams({
+                        'wiki_url': url
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    hideLoading(loadingId);
+                    if (data.error) {
+                        addAssistantMessage(`Error: ${data.error}`);
+                    } else {
+                        addAssistantMessage(`Web content processed successfully. You can now ask questions about it.`);
+                    }
+                })
+                .catch(error => {
+                    hideLoading(loadingId);
+                    addAssistantMessage(`An error occurred: ${error}`);
+                });
+            }
+            
+            function handleSummarize(e) {
+                e.preventDefault();
+                const url = document.getElementById('article-url').value.trim();
+                
+                if (!url) {
+                    addAssistantMessage("Please enter an article URL to summarize.");
+                    return;
+                }
+                
+                const loadingId = showLoading();
+                
+                fetch('/summarize_url', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                    },
+                    body: new URLSearchParams({
+                        'url': url
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    hideLoading(loadingId);
+                    if (data.error) {
+                        addAssistantMessage(`Error: ${data.error}`);
+                    } else {
+                        addAssistantMessage(`## Article Summary: ${data.title}\n\nSource: ${url}\n\n${data.summary}\n\n*This summary has been saved to your research collection.*`);
+                        loadUserProfile();
+                    }
+                })
+                .catch(error => {
+                    hideLoading(loadingId);
+                    addAssistantMessage(`An error occurred: ${error}`);
+                });
+            }
+            
+            function loadUserProfile() {
+                fetch('/get_user_profile')
+                .then(response => response.json())
+                .then(data => {
+                    const topicsContainer = document.getElementById('profile-topics');
+                    topicsContainer.innerHTML = '';
+                    
+                    if (data.topics && data.topics.length > 0) {
+                        data.topics.forEach(topic => {
+                            const badge = document.createElement('span');
+                            badge.classList.add('badge', 'bg-info', 'topic-badge');
+                            badge.textContent = topic;
+                            badge.addEventListener('click', () => getTopicNotes(topic));
+                            topicsContainer.appendChild(badge);
+                        });
+                    } else {
+                        topicsContainer.innerHTML = '<p class="text-muted">No research topics yet. Start asking questions!</p>';
+                    }
+                    
+                    // Set preferences
+                    if (data.preferences) {
+                        document.getElementById('citation-style').value = data.preferences.citation_style;
+                        
+                        // Set preferred sources checkboxes
+                        const preferredSources = data.preferences.preferred_sources;
+                        document.getElementById('source-arxiv').checked = preferredSources.includes('arxiv');
+                        document.getElementById('source-wikipedia').checked = preferredSources.includes('wikipedia');
+                        document.getElementById('source-academic').checked = preferredSources.includes('academic');
+                    }
+                })
+                .catch(error => console.error('Error loading profile:', error));
+            }
+            
+            function savePreferences(e) {
+                e.preventDefault();
+                
+                const citationStyle = document.getElementById('citation-style').value;
+                const preferredSources = [];
+                
+                if (document.getElementById('source-arxiv').checked) preferredSources.push('arxiv');
+                if (document.getElementById('source-wikipedia').checked) preferredSources.push('wikipedia');
+                if (document.getElementById('source-academic').checked) preferredSources.push('academic');
+                
+                fetch('/save_preferences', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                    },
+                    body: new URLSearchParams({
+                        'preferred_sources': JSON.stringify(preferredSources),
+                        'citation_style': citationStyle
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    addAssistantMessage("Your research preferences have been saved.");
+                })
+                .catch(error => {
+                    addAssistantMessage(`An error occurred: ${error}`);
+                });
+            }
+            
+            function generateResearchNotes() {
+                const loadingId = showLoading();
+                
+                fetch('/organize_notes', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                    },
+                    body: new URLSearchParams({
+                        'format': 'markdown'
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    hideLoading(loadingId);
+                    
+                    if (data.notes) {
+                        document.getElementById('notes-container').innerHTML = marked.parse(data.notes);
+                        // Activate the notes tab
+                        const notesTab = document.getElementById('notes-tab');
+                        bootstrap.Tab.getOrCreateInstance(notesTab).show();
+                    } else {
+                        document.getElementById('notes-container').innerHTML = '<p class="text-muted">No research notes available.</p>';
+                    }
+                })
+                .catch(error => {
+                    hideLoading(loadingId);
+                    console.error('Error generating notes:', error);
+                });
+            }
+            
+            function getTopicNotes(topic) {
+                const loadingId = showLoading();
+                
+                fetch(`/topic_notes/${encodeURIComponent(topic)}`)
+                .then(response => response.json())
+                .then(data => {
+                    hideLoading(loadingId);
+                    
+                    if (data.notes) {
+                        document.getElementById('notes-container').innerHTML = marked.parse(data.notes);
+                        // Activate the notes tab
+                        const notesTab = document.getElementById('notes-tab');
+                        bootstrap.Tab.getOrCreateInstance(notesTab).show();
+                    } else {
+                        document.getElementById('notes-container').innerHTML = '<p class="text-muted">No notes available for this topic.</p>';
+                    }
+                })
+                .catch(error => {
+                    hideLoading(loadingId);
+                    console.error('Error loading topic notes:', error);
+                });
+            }
+        });
+    </script>
+</body>
+</html>
